@@ -1,30 +1,55 @@
-import datetime
+import sys
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtWebEngineWidgets import *
 
-from PIL import ImageGrab
-import numpy as np
-import cv2
-from win32api import GetSystemMetrics
 
-width = GetSystemMetrics(0)
-height = GetSystemMetrics(1)
-time_stamp = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-file_name = f'{time_stamp}.mp4'
-fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-captured_video = cv2.VideoWriter(file_name, fourcc, 20.0, (width, height))
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        self.browser = QWebEngineView()
+        self.browser.setUrl(QUrl('http://google.com'))
+        self.setCentralWidget(self.browser)
+        self.showMaximized()
 
-webcam = cv2.VideoCapture(1)
+        # navbar
+        navbar = QToolBar()
+        self.addToolBar(navbar)
 
-while True:
-    img = ImageGrab.grab(bbox=(0, 0, width, height))
-    img_np = np.array(img)
-    img_final = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
-    _, frame = webcam.read()
-    fr_height, fr_width, _ = frame.shape
-    img_final[0:fr_height, 0: fr_width, :] = frame[0: fr_height, 0: fr_width, :]
-    cv2.imshow('Secret Capture', img_final)
+        back_btn = QAction('Back', self)
+        back_btn.triggered.connect(self.browser.back)
+        navbar.addAction(back_btn)
 
-    # cv2.imshow('webcam', frame)
+        forward_btn = QAction('Forward', self)
+        forward_btn.triggered.connect(self.browser.forward)
+        navbar.addAction(forward_btn)
 
-    captured_video.write(img_final)
-    if cv2.waitKey(10) == ord('q'):
-        break
+        reload_btn = QAction('Reload', self)
+        reload_btn.triggered.connect(self.browser.reload)
+        navbar.addAction(reload_btn)
+
+        home_btn = QAction('Home', self)
+        home_btn.triggered.connect(self.navigate_home)
+        navbar.addAction(home_btn)
+
+        self.url_bar = QLineEdit()
+        self.url_bar.returnPressed.connect(self.navigate_to_url)
+        navbar.addWidget(self.url_bar)
+
+        self.browser.urlChanged.connect(self.update_url)
+
+    def navigate_home(self):
+        self.browser.setUrl(QUrl('http://programming-hero.com'))
+
+    def navigate_to_url(self):
+        url = self.url_bar.text()
+        self.browser.setUrl(QUrl(url))
+
+    def update_url(self, q):
+        self.url_bar.setText(q.toString())
+
+
+app = QApplication(sys.argv)
+QApplication.setApplicationName('Surf It Up!')
+window = MainWindow()
+app.exec_()
